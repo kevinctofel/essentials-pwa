@@ -9,10 +9,8 @@ function App() {
   const [name, setName] = useState('');
   const [category, setCategory] = useState('');
   const [location, setLocation] = useState('');
-  const [adding, setAdding] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState(null);
+  const [thumbPreview, setThumbPreview] = useState(null); // base64 for UI
   const [lastUsedFromPhoto, setLastUsedFromPhoto] = useState(null);
-  const [photoBlob, setPhotoBlob] = useState(null);
 
   // Load items from DB on mount
   useEffect(() => {
@@ -25,20 +23,20 @@ function App() {
   }
 
   // Handle file selection (camera or gallery)
-  function handleImageChange(e) {
+  // Generates thumbnail IMMEDIATELY — no full-size image ever touches the DOM
+  async function handleImageChange(e) {
     const file = e.target.files[0];
     if (!file) return;
-    const url = URL.createObjectURL(file);
-    setPreviewUrl(url);
-    setPhotoBlob(file);
+
+    // Generate thumbnail right away
+    const thumbBase64 = await createThumbnail(file);
+    setThumbPreview(thumbBase64);
 
     // Extract EXIF timestamp
     exifr.parse(file).then((exif) => {
       if (exif && exif.CreateDate) {
-        // exif.CreateDate is a JS Date (local time)
         setLastUsedFromPhoto(exif.CreateDate.getTime());
       } else {
-        // fallback to now if no EXIF
         setLastUsedFromPhoto(Date.now());
       }
     }).catch(() => {
@@ -50,10 +48,8 @@ function App() {
     setName('');
     setCategory('');
     setLocation('');
-    setAdding(false);
-    setPreviewUrl(null);
+    setThumbPreview(null);
     setLastUsedFromPhoto(null);
-    setPhotoBlob(null);
   }
 
   async function handleSubmit(e) {
@@ -62,16 +58,13 @@ function App() {
 
     const lastUsed = lastUsedFromPhoto ?? Date.now();
 
-    // Create thumbnail base64
-    const thumbBase64 = await createThumbnail(photoBlob);
-
     await db.items.add({
       name: name.trim(),
       category: category.trim(),
       location: location.trim(),
       addedDate: Date.now(),
       lastUsed,
-      photoThumb: thumbBase64,
+      photoThumb: thumbPreview ?? '',
     });
 
     resetForm();
@@ -190,9 +183,23 @@ function App() {
               onChange={handleImageChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md"
             />
-            {previewUrl && (
-              <div className="mt-2">
-                <img src={previewUrl} alt="Preview" className="max-w-xs rounded border" />
+            {thumbPreview && (
+              <div className="mt-2 flex items-center space-x-3">
+                <img
+                  src={`data:image/jpeg;base64,${thumbPreview}`}
+                  alt="Preview"
+                  className="max-w-xs w-auto h-48 object-contain rounded border shadow"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setThumbPreview(null);
+                    setLastUsedFromPhoto(null);
+                  }}
+                  className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded hover:bg-red-200"
+                >
+                  ×
+                </button>
               </div>
             )}
             {lastUsedFromPhoto && (
@@ -205,15 +212,14 @@ function App() {
           <div className="flex items-center justify-end">
             <button
               type="button"
-              onClick={() => setAdding(!adding)}
+              onClick={resetForm}
               className="mr-3 px-3 py-1 text-xs bg-gray-200 rounded hover:bg-gray-300"
             >
-              {adding ? 'Cancel' : 'Add Item'}
+              Cancel
             </button>
             <button
               type="submit"
-              disabled={adding}
-              className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50"
+              className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
             >
               Save Item
             </button>
