@@ -9,30 +9,25 @@ function App() {
   const [name, setName] = useState('');
   const [category, setCategory] = useState('');
   const [location, setLocation] = useState('');
-  const [thumbPreview, setThumbPreview] = useState(null); // base64 for UI
+  const [thumbPreview, setThumbPreview] = useState(null);
   const [lastUsedFromPhoto, setLastUsedFromPhoto] = useState(null);
 
-  // Load items from DB on mount
   useEffect(() => {
     loadItems();
   }, []);
 
   async function loadItems() {
-    const allItems = await db.items.reverse().toArray(); // newest first
+    const allItems = await db.items.reverse().toArray();
     setItems(allItems);
   }
 
-  // Handle file selection (camera or gallery)
-  // Generates thumbnail IMMEDIATELY — no full-size image ever touches the DOM
   async function handleImageChange(e) {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Generate thumbnail right away
     const thumbBase64 = await createThumbnail(file);
     setThumbPreview(thumbBase64);
 
-    // Extract EXIF timestamp
     exifr.parse(file).then((exif) => {
       if (exif && exif.CreateDate) {
         setLastUsedFromPhoto(exif.CreateDate.getTime());
@@ -126,168 +121,230 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <header className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Essentials – Minimalist Tracker</h1>
-        <p className="text-gray-600">Track your possessions and know when you last used them.</p>
-      </header>
+    <div className="min-h-screen p-6" style={{ backgroundColor: '#ECEFF4' }}>
+      <div className="max-w-lg mx-auto">
 
-      {/* Add Item Form */}
-      <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-        <h2 className="text-lg font-semibold mb-4">Add New Item</h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Item Name
-            </label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
-          </div>
+        {/* Header */}
+        <header className="mb-8">
+          <h1 className="text-3xl tracking-tight" style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", Times, serif', color: '#2E3440' }}>
+            Essentials
+          </h1>
+          <p className="text-sm mt-1" style={{ color: '#4C566A' }}>
+            Track what you own. Know what you use.
+          </p>
+        </header>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Category (e.g., Clothing, Electronics)
-            </label>
-            <input
-              type="text"
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
-          </div>
+        {/* Add Item Form */}
+        <div className="bg-white rounded-2xl p-6 mb-8" style={{ boxShadow: '0 1px 3px rgba(46,52,64,0.04), 0 1px 2px rgba(46,52,64,0.03)' }}>
+          <h2 className="text-sm font-semibold uppercase tracking-wider mb-5" style={{ color: '#5E81AC' }}>
+            Add Item
+          </h2>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Location (e.g., Bedroom, Kitchen)
-            </label>
-            <input
-              type="text"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
-          </div>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-xs font-medium mb-1.5 uppercase tracking-wider" style={{ color: '#4C566A' }}>
+                Name
+              </label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                placeholder="e.g. Camping Stove"
+                className="w-full px-4 py-2.5 border rounded-xl text-sm transition-all focus:outline-none focus:ring-2"
+                style={{ color: '#2E3440', borderColor: '#D8DEE9', backgroundColor: '#ECEFF4' }}
+                onFocus={(e) => { e.target.style.borderColor = '#81A1C1'; e.target.style.boxShadow = '0 0 0 2px rgba(129,161,193,0.2)' }}
+                onBlur={(e) => { e.target.style.borderColor = '#D8DEE9'; e.target.style.boxShadow = 'none' }}
+              />
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Photo (optional – captures use time)
-            </label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleImageChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-            />
-            {thumbPreview && (
-              <div className="mt-2 flex items-center space-x-3">
-                <img
-                  src={`data:image/jpeg;base64,${thumbPreview}`}
-                  alt="Preview"
-                  className="max-w-xs w-auto h-48 object-contain rounded border shadow"
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium mb-1.5 uppercase tracking-wider" style={{ color: '#4C566A' }}>
+                  Category
+                </label>
+                <input
+                  type="text"
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  placeholder="Category"
+                  className="w-full px-4 py-2.5 border rounded-xl text-sm transition-all focus:outline-none focus:ring-2"
+                  style={{ color: '#2E3440', borderColor: '#D8DEE9', backgroundColor: '#ECEFF4' }}
+                  onFocus={(e) => { e.target.style.borderColor = '#81A1C1'; e.target.style.boxShadow = '0 0 0 2px rgba(129,161,193,0.2)' }}
+                  onBlur={(e) => { e.target.style.borderColor = '#D8DEE9'; e.target.style.boxShadow = 'none' }}
                 />
-                <button
-                  type="button"
-                  onClick={() => {
-                    setThumbPreview(null);
-                    setLastUsedFromPhoto(null);
-                  }}
-                  className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded hover:bg-red-200"
-                >
-                  ×
-                </button>
               </div>
-            )}
-            {lastUsedFromPhoto && (
-              <p className="text-xs text-gray-500 mt-1">
-                Use time from photo: {formatDate(lastUsedFromPhoto)}
-              </p>
-            )}
-          </div>
+              <div>
+                <label className="block text-xs font-medium mb-1.5 uppercase tracking-wider" style={{ color: '#4C566A' }}>
+                  Location
+                </label>
+                <input
+                  type="text"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  placeholder="Location"
+                  className="w-full px-4 py-2.5 border rounded-xl text-sm transition-all focus:outline-none focus:ring-2"
+                  style={{ color: '#2E3440', borderColor: '#D8DEE9', backgroundColor: '#ECEFF4' }}
+                  onFocus={(e) => { e.target.style.borderColor = '#81A1C1'; e.target.style.boxShadow = '0 0 0 2px rgba(129,161,193,0.2)' }}
+                  onBlur={(e) => { e.target.style.borderColor = '#D8DEE9'; e.target.style.boxShadow = 'none' }}
+                />
+              </div>
+            </div>
 
-          <div className="flex items-center justify-end">
-            <button
-              type="button"
-              onClick={resetForm}
-              className="mr-3 px-3 py-1 text-xs bg-gray-200 rounded hover:bg-gray-300"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
-            >
-              Save Item
-            </button>
-          </div>
-        </form>
-      </div>
-
-      {/* Items List */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-lg font-semibold mb-4">
-          Your Items {items.length > 0 && (
-            <span className="text-sm text-gray-500">({items.length})</span>
-          )}
-        </h2>
-
-        {items.length === 0 ? (
-          <p className="text-gray-500 text-center py-8">No items yet. Add your first item above!</p>
-        ) : (
-          <div className="space-y-4">
-            {items.map((item) => {
-              const days = daysSinceUse(item.lastUsed);
-              const isStale = days > STALE_THRESHOLD_DAYS;
-              return (
-                <div
-                  key={item.id}
-                  className={`flex items-start p-4 border rounded-lg ${
-                    isStale ? 'bg-orange-50 border-orange-200' : 'bg-gray-50 border-gray-200'
-                  }`}
-                >
-                  {/* Thumbnail */}
-                  {item.photoThumb ? (
+            <div>
+              <label className="block text-xs font-medium mb-1.5 uppercase tracking-wider" style={{ color: '#4C566A' }}>
+                Photo
+              </label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                className="w-full px-4 py-2.5 border rounded-xl text-sm cursor-pointer transition-all"
+                style={{ color: '#4C566A', borderColor: '#D8DEE9', backgroundColor: '#ECEFF4' }}
+              />
+              {thumbPreview && (
+                <div className="mt-3 flex items-center gap-3 rounded-xl p-3" style={{ backgroundColor: '#E5E9F0' }}>
+                  <div
+                    className="w-14 h-14 rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center"
+                    style={{ backgroundColor: '#D8DEE9' }}
+                  >
                     <img
-                      src={`data:image/jpeg;base64,${item.photoThumb}`}
-                      alt={`${item.name} thumbnail`}
-                      className="w-16 h-16 object-cover rounded mr-4"
+                      src={`data:image/jpeg;base64,${thumbPreview}`}
+                      alt="Preview"
+                      className="w-full h-full object-cover"
                     />
-                  ) : (
-                    <div className="w-16 h-16 bg-gray-200 rounded flex items-center justify-center mr-4 text-sm text-gray-500">
-                      No Photo
-                    </div>
-                  )}
-                  <div className="flex-1">
-                    <div className="flex justify-between items-start">
-                      <h3 className="font-semibold text-gray-800">{item.name}</h3>
-                      <span className={`px-2 py-1 text-xs rounded ${
-                        isStale ? 'bg-orange-100 text-orange-800' : 'bg-gray-100 text-gray-700'
-                      }`}>
-                        {days} days ago
-                      </span>
-                    </div>
-                    <div className="text-sm text-gray-600 mt-1">
-                      <span className="mr-3">📂 {item.category || '–'}</span>
-                      <span>📍 {item.location || '–'}</span>
-                    </div>
-                    <div className="mt-2">
-                      <button
-                        onClick={() => markUsed(item.id)}
-                        className="px-3 py-1 text-xs bg-indigo-100 text-indigo-800 rounded hover:bg-indigo-200"
-                      >
-                        Mark as Used Now
-                      </button>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium truncate" style={{ color: '#3B4252' }}>
+                      Photo taken
+                    </p>
+                    {lastUsedFromPhoto && (
+                      <p className="text-xs" style={{ color: '#4C566A' }}>
+                        Use time: <span style={{ color: '#2E3440', fontWeight: 500 }}>{formatDate(lastUsedFromPhoto)}</span>
+                      </p>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setThumbPreview(null);
+                      setLastUsedFromPhoto(null);
+                    }}
+                    className="text-xs rounded-lg px-2.5 py-1.5 border transition-all"
+                    style={{ color: '#4C566A', backgroundColor: 'white', borderColor: '#D8DEE9' }}
+                  >
+                    Remove
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={resetForm}
+                className="px-4 py-2 text-sm rounded-xl transition-all"
+                style={{ color: '#4C566A', backgroundColor: '#E5E9F0' }}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-5 py-2 text-sm font-medium text-white rounded-xl transition-all"
+                style={{ backgroundColor: '#5E81AC' }}
+                onMouseEnter={(e) => { e.target.style.backgroundColor = '#4C6F94' }}
+                onMouseLeave={(e) => { e.target.style.backgroundColor = '#5E81AC' }}
+              >
+                Save Item
+              </button>
+            </div>
+          </form>
+        </div>
+
+        {/* Items List */}
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-semibold uppercase tracking-wider" style={{ color: '#3B4252' }}>
+              Your Items
+            </h2>
+            {items.length > 0 && (
+              <span className="text-xs" style={{ color: '#81A1C1' }}>
+                {items.length} {items.length === 1 ? 'item' : 'items'}
+              </span>
+            )}
+          </div>
+
+          {items.length === 0 ? (
+            <p className="text-center py-12 text-sm" style={{ color: '#81A1C1' }}>
+              No items yet. Add your first item above.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {items.map((item) => {
+                const days = daysSinceUse(item.lastUsed);
+                const isStale = days > STALE_THRESHOLD_DAYS;
+                return (
+                  <div
+                    key={item.id}
+                    className="bg-white rounded-2xl p-4 transition-all"
+                    style={{ boxShadow: '0 1px 3px rgba(46,52,64,0.04), 0 1px 2px rgba(46,52,64,0.03)' }}
+                  >
+                    <div className="flex items-start gap-3">
+                      {/* Thumbnail */}
+                      {item.photoThumb ? (
+                        <img
+                          src={`data:image/jpeg;base64,${item.photoThumb}`}
+                          alt={`${item.name} thumbnail`}
+                          className="w-14 h-14 rounded-xl object-cover flex-shrink-0"
+                        />
+                      ) : (
+                        <div
+                          className="w-14 h-14 rounded-xl flex-shrink-0 flex items-center justify-center text-lg"
+                          style={{ backgroundColor: '#E5E9F0', color: '#4C566A' }}
+                        >
+                          📦
+                        </div>
+                      )}
+
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <h3 className="font-medium text-sm" style={{ color: '#2E3440' }}>
+                            {item.name}
+                          </h3>
+                          <span
+                            className={`shrink-0 text-xs font-medium rounded-lg px-2.5 py-1`}
+                            style={{
+                              color: isStale ? '#D08770' : '#A3BE8C',
+                              backgroundColor: isStale ? '#FDF6EC' : '#F2F7F2',
+                            }}
+                          >
+                            {days === 0 ? 'Today' : `${days} days ago`}
+                          </span>
+                        </div>
+                        <p className="text-xs mt-1" style={{ color: '#4C566A' }}>
+                          {item.category && <span>📂 {item.category}</span>}
+                          {item.category && item.location && <span> &nbsp;</span>}
+                          {item.location && <span>📍 {item.location}</span>}
+                          {!item.category && !item.location && <span>—</span>}
+                        </p>
+                        <button
+                          onClick={() => markUsed(item.id)}
+                          className="mt-2 text-xs font-medium rounded-lg px-3 py-1.5 transition-all"
+                          style={{ color: '#5E81AC', backgroundColor: '#E5E9F0' }}
+                          onMouseEnter={(e) => { e.target.style.backgroundColor = '#D8DEE9' }}
+                          onMouseLeave={(e) => { e.target.style.backgroundColor = '#E5E9F0' }}
+                        >
+                          Mark as Used Now
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
+                );
+              })}
+            </div>
+          )}
+        </div>
+
       </div>
     </div>
   );
