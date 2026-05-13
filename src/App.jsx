@@ -234,7 +234,13 @@ function App() {
 
         {/* Summary Banner */}
         {items.length > 0 && staleItems.length > 0 && (
-          <div className="mb-5 rounded-xl px-4 py-3 flex items-start gap-2" style={{ backgroundColor: '#FDF6EC', border: '1px solid #EBCB8B' }}>
+          <div
+            className="mb-5 rounded-xl px-4 py-3 flex items-start gap-2 cursor-pointer transition-all"
+            style={{ backgroundColor: '#FDF6EC', border: '1px solid #EBCB8B' }}
+            onClick={() => setActiveTab('stale')}
+            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#FAF3E0'; e.currentTarget.style.borderColor = '#D08770' }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#FDF6EC'; e.currentTarget.style.borderColor = '#EBCB8B' }}
+          >
             <span style={{ color: '#D08770', fontSize: '1rem', lineHeight: 1.4 }}>⏰</span>
             <p className="text-sm" style={{ color: '#8B6914' }}>
               <strong style={{ color: '#D08770' }}>{staleItems.length}</strong>{' '}
