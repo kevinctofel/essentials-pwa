@@ -20,6 +20,7 @@ function App() {
   const [fileKey, setFileKey] = useState(0);
   const [groupByLocation, setGroupByLocation] = useState(false);
   const [collapsedGroups, setCollapsedGroups] = useState({});
+  const [licenseKey, setLicenseKey] = useState(null);
 
   function toggleCollapse(name) {
     setCollapsedGroups((prev) => ({ ...prev, [name]: !prev[name] }));
@@ -29,6 +30,8 @@ function App() {
     (async () => {
       const threshold = await getSetting('staleThreshold', DEFAULT_STALE_THRESHOLD_DAYS);
       setStaleThreshold(threshold);
+      const storedKey = await getSetting('licenseKey', null);
+      setLicenseKey(storedKey);
       await loadItems();
     })();
   }, []);
@@ -70,8 +73,8 @@ function App() {
     if (!name.trim()) return;
 
     const currentCount = await db.items.count();
-    if (currentCount >= 5) {
-      alert('Free tier limited to 5 items. Upgrade to Unlimited to add more.');
+    if (!licenseKey && currentCount >= 5) {
+      alert('Free tier limited to 5 items. Purchase Unlimited from Settings to add more.');
       return;
     }
 
@@ -136,6 +139,16 @@ function App() {
     await setSetting('staleThreshold', days);
     setStaleThreshold(days);
     setShowSettings(false);
+  }
+
+  async function handleLicenseUpdate(key) {
+    if (key) {
+      await setSetting('licenseKey', key);
+      setLicenseKey(key);
+    } else {
+      await setSetting('licenseKey', null);
+      setLicenseKey(null);
+    }
   }
 
   async function handleEdit(item) {
@@ -655,6 +668,8 @@ function App() {
         currentDays={staleThreshold}
         onSave={handleSaveThreshold}
         onClose={() => setShowSettings(false)}
+        licenseKey={licenseKey}
+        onLicenseUpdate={handleLicenseUpdate}
       />
 
       {/* Edit Item Modal */}
