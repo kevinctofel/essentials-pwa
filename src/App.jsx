@@ -18,6 +18,12 @@ function App() {
   const [deleteConfirmItem, setDeleteConfirmItem] = useState(null);
   const [sortBy, setSortBy] = useState('lastUsed-desc');
   const [fileKey, setFileKey] = useState(0);
+  const [groupByLocation, setGroupByLocation] = useState(false);
+  const [collapsedGroups, setCollapsedGroups] = useState({});
+
+  function toggleCollapse(name) {
+    setCollapsedGroups((prev) => ({ ...prev, [name]: !prev[name] }));
+  }
 
   useEffect(() => {
     (async () => {
@@ -178,6 +184,24 @@ function App() {
   };
 
   const sortedItems = [...baseItems].sort(sortFns[sortBy] ?? sortFns['lastUsed-desc']);
+
+  function getLocationGroups(items) {
+    const groups = {};
+    items.forEach((item) => {
+      const key = item.location?.trim() || "Other";
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(item);
+    });
+    return Object.entries(groups)
+      .sort(([a], [b]) => {
+        if (a === "Other") return 1;
+        if (b === "Other") return -1;
+        return a.localeCompare(b);
+      })
+      .map(([name, items]) => ({ name, items }));
+  }
+
+  const locationGroups = groupByLocation ? getLocationGroups(sortedItems) : null;
 
   return (
     <div className="min-h-screen p-6" style={{ backgroundColor: '#ECEFF4' }}>
@@ -381,8 +405,19 @@ function App() {
             </button>
           </div>
 
-          {/* Sort */}
-          <div className="flex justify-end mb-4">
+          {/* Sort & Group */}
+          <div className="flex justify-end items-center gap-2 mb-4">
+            <button
+              onClick={() => setGroupByLocation(!groupByLocation)}
+              className="text-xs rounded-lg px-3 py-1.5 border transition-all"
+              style={{
+                color: groupByLocation ? 'white' : '#4C566A',
+                backgroundColor: groupByLocation ? '#5E81AC' : 'white',
+                borderColor: groupByLocation ? '#5E81AC' : '#D8DEE9',
+              }}
+            >
+              📍 Group
+            </button>
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
@@ -404,7 +439,7 @@ function App() {
                 : 'No items yet. Add your first item above.'
               }
             </p>
-          ) : (
+          ) : !groupByLocation ? (
             <div className="space-y-3">
               {sortedItems.map((item) => {
                 const days = daysSinceUse(item.lastUsed);
@@ -489,6 +524,115 @@ function App() {
                   </div>
                 );
               })}
+            </div>
+          ) : (
+            <div className="space-y-5">
+              {locationGroups.map((group) => (
+                <div key={group.name}>
+                  <button
+                    onClick={() => toggleCollapse(group.name)}
+                    className="w-full flex items-center justify-between px-1 py-2"
+                    style={{ color: '#4C566A' }}
+                  >
+                    <h3 className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#5E81AC' }}>
+                      📍 {group.name}
+                      <span className="font-normal ml-1" style={{ color: '#81A1C1' }}>
+                        ({group.items.length})
+                      </span>
+                    </h3>
+                    <span style={{ color: '#81A1C1', fontSize: '0.75rem' }}>
+                      {collapsedGroups[group.name] ? '\u25b6' : '\u25bc'}
+                    </span>
+                  </button>
+                  {!collapsedGroups[group.name] && (
+                    <div className="space-y-3 mt-3">
+                      {group.items.map((item) => {
+                        const days = daysSinceUse(item.lastUsed);
+                        const isStale = days > staleThreshold;
+                        return (
+                  <div
+                    key={item.id}
+                    className="bg-white rounded-2xl p-4 transition-all cursor-pointer"
+                    style={{ boxShadow: '0 1px 3px rgba(46,52,64,0.04), 0 1px 2px rgba(46,52,64,0.03)' }}
+                    onClick={() => handleEdit(item)}
+                  >
+                    <div className="flex items-start gap-3">
+                      {item.photoThumb ? (
+                        <img
+                          src={`data:image/jpeg;base64,${item.photoThumb}`}
+                          alt={`${item.name} thumbnail`}
+                          className="w-14 h-14 rounded-xl object-cover flex-shrink-0"
+                        />
+                      ) : (
+                        <div
+                          className="w-14 h-14 rounded-xl flex-shrink-0 flex items-center justify-center text-lg"
+                          style={{ backgroundColor: '#E5E9F0', color: '#4C566A' }}
+                        >
+                          📦
+                        </div>
+                      )}
+
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <h3 className="font-medium text-sm" style={{ color: '#2E3440' }}>
+                            {item.name}
+                          </h3>
+                          <span
+                            className={`shrink-0 text-xs font-medium rounded-lg px-2.5 py-1`}
+                            style={{
+                              color: isStale ? '#D08770' : '#A3BE8C',
+                              backgroundColor: isStale ? '#FDF6EC' : '#F2F7F2',
+                            }}
+                          >
+                            {days === 0 ? 'Today' : `${days} days ago`}
+                          </span>
+                        </div>
+                        <p className="text-xs mt-1" style={{ color: '#4C566A' }}>
+                          {item.category && <span>📂 {item.category}</span>}
+                          {item.category && item.location && <span> &nbsp;</span>}
+                          {item.location && <span>📍 {item.location}</span>}
+                          {!item.category && !item.location && <span>—</span>}
+                        </p>
+                        <div className="flex items-center gap-2 mt-2 flex-wrap">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); markUsed(item.id); }}
+                            className="text-xs font-medium rounded-lg px-3 py-1.5 transition-all"
+                            style={{ color: '#5E81AC', backgroundColor: '#E5E9F0' }}
+                            onMouseEnter={(e) => { e.target.style.backgroundColor = '#D8DEE9' }}
+                            onMouseLeave={(e) => { e.target.style.backgroundColor = '#E5E9F0' }}
+                          >
+                            Mark as Used Now
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleEdit(item); }}
+                            className="text-xs rounded-lg px-2.5 py-1.5 transition-all"
+                            style={{ color: '#81A1C1', backgroundColor: '#E5E9F0' }}
+                            onMouseEnter={(e) => { e.target.style.backgroundColor = '#D8DEE9'; e.target.style.color = '#5E81AC' }}
+                            onMouseLeave={(e) => { e.target.style.backgroundColor = '#E5E9F0'; e.target.style.color = '#81A1C1' }}
+                            aria-label="Edit item"
+                          >
+                            ✏️
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); requestDelete(item); }}
+                            className="text-xs rounded-lg px-2.5 py-1.5 transition-all"
+                            style={{ color: '#BF616A', backgroundColor: '#F9F0F0' }}
+                            onMouseEnter={(e) => { e.target.style.backgroundColor = '#F4E4E4' }}
+                            onMouseLeave={(e) => { e.target.style.backgroundColor = '#F9F0F0' }}
+                            aria-label="Delete item"
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
           )}
         </div>
