@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-const VERIFY_URL = 'https://minimally-api.your-domain.workers.dev'; // TODO: set actual Worker URL after deploy
+const VERIFY_URL = 'https://minimally.co/api/verify'; // Live on Pages
 
 export default function Settings({ open, currentDays, onSave, onClose, licenseKey, onLicenseUpdate }) {
   const [days, setDays] = useState(currentDays);
@@ -107,16 +107,27 @@ export default function Settings({ open, currentDays, onSave, onClose, licenseKe
                 onFocus={(e) => { e.target.style.borderColor = '#81A1C1'; e.target.style.boxShadow = '0 0 0 2px rgba(129,161,193,0.2)' }}
                 onBlur={(e) => { e.target.style.borderColor = '#D8DEE9'; e.target.style.boxShadow = 'none' }}
               />
-              <button
-                onClick={handleVerify}
-                disabled={verifying || !keyInput.trim()}
-                className="mt-2 px-4 py-2 text-xs font-medium text-white rounded-xl transition-all disabled:opacity-50"
-                style={{ backgroundColor: '#5E81AC' }}
-                onMouseEnter={(e) => { if (!verifying) e.target.style.backgroundColor = '#4C6F94' }}
-                onMouseLeave={(e) => { e.target.style.backgroundColor = '#5E81AC' }}
-              >
-                {verifying ? 'Verifying...' : 'Verify'}
-              </button>
+              <div className="flex items-center gap-3 mt-2">
+                <button
+                  onClick={handleVerify}
+                  disabled={verifying || !keyInput.trim()}
+                  className="px-4 py-2 text-xs font-medium text-white rounded-xl transition-all disabled:opacity-50"
+                  style={{ backgroundColor: '#5E81AC' }}
+                  onMouseEnter={(e) => { if (!verifying) e.target.style.backgroundColor = '#4C6F94' }}
+                  onMouseLeave={(e) => { e.target.style.backgroundColor = '#5E81AC' }}
+                >
+                  {verifying ? 'Verifying...' : 'Verify'}
+                </button>
+                <a
+                  href="https://minimally.co/#pricing"
+                  target="_blank"
+                  rel="noopener"
+                  className="text-xs font-medium transition-all"
+                  style={{ color: '#5E81AC' }}
+                >
+                  Purchase Unlimited →
+                </a>
+              </div>
               {message && (
                 <p className="text-xs mt-2" style={{ color: message.type === 'success' ? '#A3BE8C' : '#BF616A' }}>
                   {message.text}
