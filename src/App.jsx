@@ -453,9 +453,8 @@ function App() {
                 return (
                   <div
                     key={item.id}
-                    className="bg-white rounded-2xl p-4 transition-all cursor-pointer"
+                    className="bg-white rounded-2xl p-4 transition-all"
                     style={{ boxShadow: '0 1px 3px rgba(46,52,64,0.04), 0 1px 2px rgba(46,52,64,0.03)' }}
-                    onClick={() => handleEdit(item)}
                   >
                     <div className="flex items-start gap-3">
                       {item.photoThumb ? (
@@ -558,9 +557,8 @@ function App() {
                         return (
                   <div
                     key={item.id}
-                    className="bg-white rounded-2xl p-4 transition-all cursor-pointer"
+                    className="bg-white rounded-2xl p-4 transition-all"
                     style={{ boxShadow: '0 1px 3px rgba(46,52,64,0.04), 0 1px 2px rgba(46,52,64,0.03)' }}
-                    onClick={() => handleEdit(item)}
                   >
                     <div className="flex items-start gap-3">
                       {item.photoThumb ? (
