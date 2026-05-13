@@ -477,6 +477,7 @@ function App() {
 
       {/* Edit Item Modal */}
       <EditItemModal
+        key={editingItem?.id ?? 'none'}
         item={editingItem}
         open={editingItem !== null}
         onSave={handleSaveEdit}
