@@ -69,6 +69,12 @@ function App() {
     e.preventDefault();
     if (!name.trim()) return;
 
+    const currentCount = await db.items.count();
+    if (currentCount >= 5) {
+      alert('Free tier limited to 5 items. Upgrade to Unlimited to add more.');
+      return;
+    }
+
     const lastUsed = lastUsedFromPhoto ?? Date.now();
 
     await db.items.add({
