@@ -233,7 +233,7 @@ function App() {
         </header>
 
         {/* Summary Banner */}
-        {items.length > 0 && staleItems.length > 0 && (
+        {activeTab === 'all' && items.length > 0 && staleItems.length > 0 && (
           <div
             className="mb-5 rounded-xl px-4 py-3 flex items-start gap-2 cursor-pointer transition-all"
             style={{ backgroundColor: '#FDF6EC', border: '1px solid #EBCB8B' }}
