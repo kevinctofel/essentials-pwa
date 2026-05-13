@@ -16,6 +16,7 @@ function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [deleteConfirmItem, setDeleteConfirmItem] = useState(null);
+  const [sortBy, setSortBy] = useState('lastUsed-desc');
 
   useEffect(() => {
     (async () => {
@@ -165,7 +166,16 @@ function App() {
   }
 
   const staleItems = items.filter((item) => daysSinceUse(item.lastUsed) > staleThreshold);
-  const displayedItems = activeTab === 'stale' ? staleItems : items;
+  const baseItems = activeTab === 'stale' ? staleItems : items;
+
+  const sortFns = {
+    'lastUsed-desc': (a, b) => b.lastUsed - a.lastUsed,
+    'lastUsed-asc':  (a, b) => a.lastUsed - b.lastUsed,
+    'name-asc':      (a, b) => a.name.localeCompare(b.name),
+    'addedDate-desc':(a, b) => b.addedDate - a.addedDate,
+  };
+
+  const sortedItems = [...baseItems].sort(sortFns[sortBy] ?? sortFns['lastUsed-desc']);
 
   return (
     <div className="min-h-screen p-6" style={{ backgroundColor: '#ECEFF4' }}>
@@ -368,8 +378,23 @@ function App() {
             </button>
           </div>
 
+          {/* Sort */}
+          <div className="flex justify-end mb-4">
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="text-xs rounded-lg px-3 py-1.5 border transition-all focus:outline-none cursor-pointer"
+              style={{ color: '#4C566A', borderColor: '#D8DEE9', backgroundColor: 'white' }}
+            >
+              <option value="lastUsed-desc">Last Used (newest)</option>
+              <option value="lastUsed-asc">Last Used (oldest)</option>
+              <option value="name-asc">Name (A–Z)</option>
+              <option value="addedDate-desc">Date Added (newest)</option>
+            </select>
+          </div>
+
           {/* List */}
-          {displayedItems.length === 0 ? (
+          {sortedItems.length === 0 ? (
             <p className="text-center py-12 text-sm" style={{ color: '#81A1C1' }}>
               {activeTab === 'stale'
                 ? 'No stale items. Everything has been used recently!'
@@ -378,7 +403,7 @@ function App() {
             </p>
           ) : (
             <div className="space-y-3">
-              {displayedItems.map((item) => {
+              {sortedItems.map((item) => {
                 const days = daysSinceUse(item.lastUsed);
                 const isStale = days > staleThreshold;
                 return (
