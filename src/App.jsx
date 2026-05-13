@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
-import db from './db';
+import db, { getSetting, setSetting, DEFAULT_STALE_THRESHOLD_DAYS } from './db';
 import exifr from 'exifr';
-
-const STALE_THRESHOLD_DAYS = 30;
+import Settings from './Settings';
 
 function App() {
   const [items, setItems] = useState([]);
@@ -11,9 +10,16 @@ function App() {
   const [location, setLocation] = useState('');
   const [thumbPreview, setThumbPreview] = useState(null);
   const [lastUsedFromPhoto, setLastUsedFromPhoto] = useState(null);
+  const [staleThreshold, setStaleThreshold] = useState(DEFAULT_STALE_THRESHOLD_DAYS);
+  const [activeTab, setActiveTab] = useState('all');
+  const [showSettings, setShowSettings] = useState(false);
 
   useEffect(() => {
-    loadItems();
+    (async () => {
+      const threshold = await getSetting('staleThreshold', DEFAULT_STALE_THRESHOLD_DAYS);
+      setStaleThreshold(threshold);
+      await loadItems();
+    })();
   }, []);
 
   async function loadItems() {
@@ -108,6 +114,12 @@ function App() {
     await loadItems();
   }
 
+  async function handleSaveThreshold(days) {
+    await setSetting('staleThreshold', days);
+    setStaleThreshold(days);
+    setShowSettings(false);
+  }
+
   function formatDate(ts) {
     return new Date(ts).toLocaleDateString(undefined, {
       year: 'numeric',
@@ -120,22 +132,55 @@ function App() {
     return Math.floor((Date.now() - ts) / (1000 * 60 * 60 * 24));
   }
 
+  const staleItems = items.filter((item) => daysSinceUse(item.lastUsed) > staleThreshold);
+  const displayedItems = activeTab === 'stale' ? staleItems : items;
+
   return (
     <div className="min-h-screen p-6" style={{ backgroundColor: '#ECEFF4' }}>
       <div className="max-w-lg mx-auto">
 
         {/* Header */}
-        <header className="mb-8">
-          <h1 className="text-3xl tracking-tight" style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", Times, serif', color: '#2E3440' }}>
-            Essentials
-          </h1>
-          <p className="text-sm mt-1" style={{ color: '#4C566A' }}>
-            Track what you own. Know what you use.
-          </p>
+        <header className="mb-8 flex items-start justify-between">
+          <div>
+            <h1 className="text-3xl tracking-tight" style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", Times, serif', color: '#2E3440' }}>
+              Essentials
+            </h1>
+            <p className="text-sm mt-1" style={{ color: '#4C566A' }}>
+              Track what you own. Know what you use.
+            </p>
+          </div>
+          <button
+            onClick={() => setShowSettings(true)}
+            className="p-2 rounded-xl transition-all"
+            style={{ color: '#81A1C1' }}
+            onMouseEnter={(e) => { e.target.style.backgroundColor = '#E5E9F0'; e.target.style.color = '#5E81AC' }}
+            onMouseLeave={(e) => { e.target.style.backgroundColor = 'transparent'; e.target.style.color = '#81A1C1' }}
+            aria-label="Settings"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.573-1.066z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+          </button>
         </header>
 
+        {/* Summary Banner */}
+        {items.length > 0 && staleItems.length > 0 && (
+          <div className="mb-5 rounded-xl px-4 py-3 flex items-start gap-2" style={{ backgroundColor: '#FDF6EC', border: '1px solid #EBCB8B' }}>
+            <span style={{ color: '#D08770', fontSize: '1rem', lineHeight: 1.4 }}>⏰</span>
+            <p className="text-sm" style={{ color: '#8B6914' }}>
+              <strong style={{ color: '#D08770' }}>{staleItems.length}</strong>{' '}
+              {staleItems.length === 1 ? 'item hasn\'t' : 'items haven\'t'} been used in{' '}
+              <strong>{staleThreshold >= 365
+                ? `${Math.round(staleThreshold / 30.4)} months`
+                : `${staleThreshold} days`
+              }</strong>
+            </p>
+          </div>
+        )}
+
         {/* Add Item Form */}
-        <div className="bg-white rounded-2xl p-6 mb-8" style={{ boxShadow: '0 1px 3px rgba(46,52,64,0.04), 0 1px 2px rgba(46,52,64,0.03)' }}>
+        <div className="bg-white rounded-2xl p-6 mb-6" style={{ boxShadow: '0 1px 3px rgba(46,52,64,0.04), 0 1px 2px rgba(46,52,64,0.03)' }}>
           <h2 className="text-sm font-semibold uppercase tracking-wider mb-5" style={{ color: '#5E81AC' }}>
             Add Item
           </h2>
@@ -261,28 +306,49 @@ function App() {
           </form>
         </div>
 
-        {/* Items List */}
+        {/* Items Section */}
         <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold uppercase tracking-wider" style={{ color: '#3B4252' }}>
-              Your Items
-            </h2>
-            {items.length > 0 && (
-              <span className="text-xs" style={{ color: '#81A1C1' }}>
-                {items.length} {items.length === 1 ? 'item' : 'items'}
-              </span>
-            )}
+          {/* Tabs */}
+          <div className="flex items-center gap-1 mb-4 bg-white rounded-xl p-1" style={{ boxShadow: '0 1px 2px rgba(46,52,64,0.04)' }}>
+            <button
+              onClick={() => setActiveTab('all')}
+              className={`flex-1 text-sm font-medium rounded-lg px-4 py-2 transition-all ${activeTab === 'all' ? 'text-white' : ''}`}
+              style={{
+                backgroundColor: activeTab === 'all' ? '#5E81AC' : 'transparent',
+                color: activeTab === 'all' ? 'white' : '#4C566A',
+              }}
+              onMouseEnter={(e) => { if (activeTab !== 'all') { e.target.style.backgroundColor = '#E5E9F0'; } }}
+              onMouseLeave={(e) => { if (activeTab !== 'all') { e.target.style.backgroundColor = 'transparent'; } }}
+            >
+              All {items.length > 0 && `(${items.length})`}
+            </button>
+            <button
+              onClick={() => setActiveTab('stale')}
+              className={`flex-1 text-sm font-medium rounded-lg px-4 py-2 transition-all ${activeTab === 'stale' ? 'text-white' : ''}`}
+              style={{
+                backgroundColor: activeTab === 'stale' ? '#D08770' : 'transparent',
+                color: activeTab === 'stale' ? 'white' : '#D08770',
+              }}
+              onMouseEnter={(e) => { if (activeTab !== 'stale') { e.target.style.backgroundColor = '#FDF6EC'; } }}
+              onMouseLeave={(e) => { if (activeTab !== 'stale') { e.target.style.backgroundColor = 'transparent'; } }}
+            >
+              Stale {staleItems.length > 0 && `(${staleItems.length})`}
+            </button>
           </div>
 
-          {items.length === 0 ? (
+          {/* List */}
+          {displayedItems.length === 0 ? (
             <p className="text-center py-12 text-sm" style={{ color: '#81A1C1' }}>
-              No items yet. Add your first item above.
+              {activeTab === 'stale'
+                ? 'No stale items. Everything has been used recently!'
+                : 'No items yet. Add your first item above.'
+              }
             </p>
           ) : (
             <div className="space-y-3">
-              {items.map((item) => {
+              {displayedItems.map((item) => {
                 const days = daysSinceUse(item.lastUsed);
-                const isStale = days > STALE_THRESHOLD_DAYS;
+                const isStale = days > staleThreshold;
                 return (
                   <div
                     key={item.id}
@@ -290,7 +356,6 @@ function App() {
                     style={{ boxShadow: '0 1px 3px rgba(46,52,64,0.04), 0 1px 2px rgba(46,52,64,0.03)' }}
                   >
                     <div className="flex items-start gap-3">
-                      {/* Thumbnail */}
                       {item.photoThumb ? (
                         <img
                           src={`data:image/jpeg;base64,${item.photoThumb}`}
@@ -346,6 +411,14 @@ function App() {
         </div>
 
       </div>
+
+      {/* Settings Modal */}
+      <Settings
+        open={showSettings}
+        currentDays={staleThreshold}
+        onSave={handleSaveThreshold}
+        onClose={() => setShowSettings(false)}
+      />
     </div>
   );
 }
