@@ -17,6 +17,7 @@ function App() {
   const [editingItem, setEditingItem] = useState(null);
   const [deleteConfirmItem, setDeleteConfirmItem] = useState(null);
   const [sortBy, setSortBy] = useState('lastUsed-desc');
+  const [fileKey, setFileKey] = useState(0);
 
   useEffect(() => {
     (async () => {
@@ -55,6 +56,7 @@ function App() {
     setLocation('');
     setThumbPreview(null);
     setLastUsedFromPhoto(null);
+    setFileKey((k) => k + 1);
   }
 
   async function handleSubmit(e) {
@@ -285,6 +287,7 @@ function App() {
               <input
                 type="file"
                 accept="image/*"
+                key={fileKey}
                 onChange={handleImageChange}
                 className="w-full px-4 py-2.5 border rounded-xl text-sm cursor-pointer transition-all"
                 style={{ color: '#4C566A', borderColor: '#D8DEE9', backgroundColor: '#ECEFF4' }}
