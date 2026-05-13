@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import db, { getSetting, setSetting, DEFAULT_STALE_THRESHOLD_DAYS } from './db';
 import exifr from 'exifr';
 import Settings from './Settings';
+import EditItemModal from './EditItemModal';
 
 function App() {
   const [items, setItems] = useState([]);
@@ -13,6 +14,8 @@ function App() {
   const [staleThreshold, setStaleThreshold] = useState(DEFAULT_STALE_THRESHOLD_DAYS);
   const [activeTab, setActiveTab] = useState('all');
   const [showSettings, setShowSettings] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
+  const [deleteConfirmItem, setDeleteConfirmItem] = useState(null);
 
   useEffect(() => {
     (async () => {
@@ -118,6 +121,35 @@ function App() {
     await setSetting('staleThreshold', days);
     setStaleThreshold(days);
     setShowSettings(false);
+  }
+
+  async function handleEdit(item) {
+    setEditingItem(item);
+  }
+
+  async function handleSaveEdit(id, updates) {
+    await db.items.update(id, updates);
+    setEditingItem(null);
+    await loadItems();
+  }
+
+  async function handleCancelEdit() {
+    setEditingItem(null);
+  }
+
+  function requestDelete(item) {
+    setDeleteConfirmItem(item);
+  }
+
+  function cancelDelete() {
+    setDeleteConfirmItem(null);
+  }
+
+  async function confirmDelete() {
+    if (!deleteConfirmItem) return;
+    await db.items.delete(deleteConfirmItem.id);
+    setDeleteConfirmItem(null);
+    await loadItems();
   }
 
   function formatDate(ts) {
@@ -352,8 +384,9 @@ function App() {
                 return (
                   <div
                     key={item.id}
-                    className="bg-white rounded-2xl p-4 transition-all"
+                    className="bg-white rounded-2xl p-4 transition-all cursor-pointer"
                     style={{ boxShadow: '0 1px 3px rgba(46,52,64,0.04), 0 1px 2px rgba(46,52,64,0.03)' }}
+                    onClick={() => handleEdit(item)}
                   >
                     <div className="flex items-start gap-3">
                       {item.photoThumb ? (
@@ -392,15 +425,37 @@ function App() {
                           {item.location && <span>📍 {item.location}</span>}
                           {!item.category && !item.location && <span>—</span>}
                         </p>
-                        <button
-                          onClick={() => markUsed(item.id)}
-                          className="mt-2 text-xs font-medium rounded-lg px-3 py-1.5 transition-all"
-                          style={{ color: '#5E81AC', backgroundColor: '#E5E9F0' }}
-                          onMouseEnter={(e) => { e.target.style.backgroundColor = '#D8DEE9' }}
-                          onMouseLeave={(e) => { e.target.style.backgroundColor = '#E5E9F0' }}
-                        >
-                          Mark as Used Now
-                        </button>
+                        <div className="flex items-center gap-2 mt-2 flex-wrap">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); markUsed(item.id); }}
+                            className="text-xs font-medium rounded-lg px-3 py-1.5 transition-all"
+                            style={{ color: '#5E81AC', backgroundColor: '#E5E9F0' }}
+                            onMouseEnter={(e) => { e.target.style.backgroundColor = '#D8DEE9' }}
+                            onMouseLeave={(e) => { e.target.style.backgroundColor = '#E5E9F0' }}
+                          >
+                            Mark as Used Now
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleEdit(item); }}
+                            className="text-xs rounded-lg px-2.5 py-1.5 transition-all"
+                            style={{ color: '#81A1C1', backgroundColor: '#E5E9F0' }}
+                            onMouseEnter={(e) => { e.target.style.backgroundColor = '#D8DEE9'; e.target.style.color = '#5E81AC' }}
+                            onMouseLeave={(e) => { e.target.style.backgroundColor = '#E5E9F0'; e.target.style.color = '#81A1C1' }}
+                            aria-label="Edit item"
+                          >
+                            ✏️
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); requestDelete(item); }}
+                            className="text-xs rounded-lg px-2.5 py-1.5 transition-all"
+                            style={{ color: '#BF616A', backgroundColor: '#F9F0F0' }}
+                            onMouseEnter={(e) => { e.target.style.backgroundColor = '#F4E4E4' }}
+                            onMouseLeave={(e) => { e.target.style.backgroundColor = '#F9F0F0' }}
+                            aria-label="Delete item"
+                          >
+                            🗑️
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -419,6 +474,46 @@ function App() {
         onSave={handleSaveThreshold}
         onClose={() => setShowSettings(false)}
       />
+
+      {/* Edit Item Modal */}
+      <EditItemModal
+        item={editingItem}
+        open={editingItem !== null}
+        onSave={handleSaveEdit}
+        onClose={handleCancelEdit}
+      />
+
+      {/* Delete Confirmation */}
+      {deleteConfirmItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(46,52,64,0.5)' }}>
+          <div className="bg-white rounded-2xl w-full max-w-xs p-6" style={{ boxShadow: '0 8px 32px rgba(46,52,64,0.12)' }}>
+            <h2 className="text-sm font-semibold uppercase tracking-wider mb-3" style={{ color: '#BF616A' }}>
+              Delete Item
+            </h2>
+            <p className="text-sm mb-6" style={{ color: '#3B4252' }}>
+              Are you sure you want to delete <strong>{deleteConfirmItem.name}</strong>?
+            </p>
+            <div className="flex items-center justify-end gap-3">
+              <button
+                onClick={cancelDelete}
+                className="px-4 py-2 text-sm rounded-xl transition-all"
+                style={{ color: '#4C566A', backgroundColor: '#E5E9F0' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="px-5 py-2 text-sm font-medium text-white rounded-xl transition-all"
+                style={{ backgroundColor: '#BF616A' }}
+                onMouseEnter={(e) => { e.target.style.backgroundColor = '#A85555' }}
+                onMouseLeave={(e) => { e.target.style.backgroundColor = '#BF616A' }}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
