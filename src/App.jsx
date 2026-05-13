@@ -210,7 +210,7 @@ function App() {
         {/* Header */}
         <header className="mb-8 flex items-start justify-between">
           <div>
-            <h1 className="text-3xl tracking-tight" style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", Times, serif', color: '#2E3440' }}>
+            <h1 className="text-3xl tracking-tight" style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', color: '#2E3440' }}>
               Essentials
             </h1>
             <p className="text-sm mt-1" style={{ color: '#4C566A' }}>
