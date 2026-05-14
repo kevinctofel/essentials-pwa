@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-const VERIFY_URL = 'https://minimally-landing.pages.dev/api/verify';
+const VERIFY_URL = 'https://minimally.co/api/verify';
 
 export default function Settings({ open, currentDays, onSave, onClose, licenseKey, onLicenseUpdate }) {
   const [days, setDays] = useState(currentDays);
@@ -119,7 +119,7 @@ export default function Settings({ open, currentDays, onSave, onClose, licenseKe
                   {verifying ? 'Verifying...' : 'Verify'}
                 </button>
                 <a
-                  href="https://minimally-landing.pages.dev/#pricing"
+                  href="https://minimally.co/#pricing"
                   target="_blank"
                   rel="noopener"
                   className="text-xs font-medium transition-all"
